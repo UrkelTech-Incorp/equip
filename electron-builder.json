@@ -1,0 +1,39 @@
+{
+  "appId": "com.bgsstudios.equip",
+  "productName": "Equip",
+  "copyright": "Copyright © 2026 BGS Studios",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "out/**/*",
+    "resources/**/*",
+    "!**/*.map"
+  ],
+  "extraResources": [
+    { "from": "resources", "to": "resources" }
+  ],
+  "win": {
+    "target": [
+      { "target": "nsis", "arch": ["x64"] }
+    ],
+    "icon": "resources/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "resources/icon.icns",
+    "darkModeSupport": true
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "resources/icon.png",
+    "category": "AudioVideo"
+  }
+}

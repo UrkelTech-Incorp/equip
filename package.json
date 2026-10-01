@@ -1,0 +1,42 @@
+{
+  "name": "equip",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A customizable high-fidelity music player for Windows",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "smoke": "electron-vite build && node scripts/run-smoke.mjs",
+    "smoke:live": "electron-vite build && node scripts/run-smoke.mjs --live",
+    "dist": "npm run build && electron-builder --config electron-builder.json"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "music-metadata": "^11.8.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.14",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.3",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^4.0.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7"
+  },
+  "allowScripts": {
+    "electron@38.8.6": true,
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

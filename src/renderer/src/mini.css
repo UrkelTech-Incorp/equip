@@ -1,0 +1,30 @@
+:root {
+  font-family: 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  color: #f7f6fb;
+}
+* { box-sizing: border-box; }
+html, body, #mini-root { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+button { color: inherit; border: 0; cursor: pointer; background: transparent; }
+
+.mini {
+  -webkit-app-region: drag;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(30,27,42,.94), rgba(16,15,22,.96));
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.55);
+  backdrop-filter: blur(30px);
+}
+.mini-art { width: 88px; height: 88px; flex: none; border-radius: 12px; object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+.mini-art.placeholder { background: linear-gradient(145deg,#302d3b,#1b1921); }
+.mini-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.mini-info strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-info span { color: #92909f; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-controls { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.mini-controls button { display: grid; place-items: center; color: #cfccdb; padding: 0; }
+.mini-controls button:hover { color: #fff; }
+.mini-play { width: 34px; height: 34px; border-radius: 50%; background: #f4f2f8 !important; color: #15131b !important; }
+.mini-dock { -webkit-app-region: no-drag; position: absolute; top: 10px; right: 10px; color: #6f6c7a; }
+.mini-dock:hover { color: #fff; }
