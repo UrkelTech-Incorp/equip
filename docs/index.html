@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Equip — A Vox-like music player with SoundCloud streaming</title>
+    <meta
+      name="description"
+      content="Equip is a minimalist Windows music player: local library, SoundCloud streaming, offline downloads, an audio-reactive visualizer, up to 192 kHz output and a pop-out now-playing window."
+    />
+    <meta name="theme-color" content="#0a0a10" />
+    <meta property="og:title" content="Equip — your music, any source, one player" />
+    <meta
+      property="og:description"
+      content="A Vox-like music player for Windows with SoundCloud streaming, offline downloads, a visualizer and HD audio output."
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <header class="site-nav">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Equip</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#soundcloud">SoundCloud</a>
+        <a href="#audio">Audio</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/UrkelTech-Incorp/equip" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="accent-switcher" role="group" aria-label="Preview accent color">
+        <button class="swatch is-active" data-accent="#9b7cff" style="--c:#9b7cff" aria-label="Purple accent"></button>
+        <button class="swatch" data-accent="#4cc9f0" style="--c:#4cc9f0" aria-label="Cyan accent"></button>
+        <button class="swatch" data-accent="#34d399" style="--c:#34d399" aria-label="Green accent"></button>
+        <button class="swatch" data-accent="#fb7185" style="--c:#fb7185" aria-label="Rose accent"></button>
+        <button class="swatch" data-accent="#fbbf24" style="--c:#fbbf24" aria-label="Amber accent"></button>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-text">
+          <p class="eyebrow">Windows · Electron · Built for listening</p>
+          <h1>
+            Your music.<br />
+            <span class="grad">Any source.</span><br />
+            One player.
+          </h1>
+          <p class="lede">
+            Equip is a minimalist, Vox-like music player for Windows. Build a local library from any
+            folder, stream SoundCloud tracks straight into it, download them for offline listening,
+            and watch the visualizer dance to the real signal — all in a tiny, customize-able shell.
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="#download">Download for Windows</a>
+            <a class="btn ghost" href="https://github.com/UrkelTech-Incorp/equip" target="_blank" rel="noopener">
+              View on GitHub ↗
+            </a>
+          </div>
+          <ul class="hero-badges" aria-label="Highlights">
+            <li>SoundCloud streaming</li>
+            <li>Offline downloads</li>
+            <li>Up to 192 kHz output</li>
+            <li>Audio-reactive visualizer</li>
+            <li>Pop-out now playing</li>
+          </ul>
+        </div>
+
+        <div class="hero-mock-wrap">
+          <div class="mock" id="mock" role="img" aria-label="Animated preview of the Equip player">
+            <div class="mock-titlebar">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+              <span class="mock-title">Equip</span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-sidebar">
+                <span class="nav-item is-active">Library</span>
+                <span class="nav-item">Discover</span>
+                <span class="nav-item">SoundCloud</span>
+                <span class="nav-item">Playlists</span>
+                <span class="nav-item">Queue</span>
+                <span class="nav-item">Settings</span>
+              </div>
+              <div class="mock-main">
+                <div class="mock-art" aria-hidden="true"></div>
+                <div class="mock-now">
+                  <p class="mock-track-title" id="mockTitle">Nightingale</p>
+                  <p class="mock-track-artist" id="mockArtist">Cobalt Sky</p>
+                  <div class="mock-progress">
+                    <span class="mock-progress-time" id="mockTime">0:42</span>
+                    <span class="mock-progress-bar"><i id="mockProgressFill"></i></span>
+                    <span class="mock-progress-time" id="mockDur">3:12</span>
+                  </div>
+                  <div class="mock-vis" id="mockVis" aria-hidden="true"></div>
+                  <div class="mock-transport">
+                    <button class="t-btn" id="mockShuffle" aria-label="Shuffle" disabled>⤨</button>
+                    <button class="t-btn" id="mockPrev" aria-label="Previous">⏮</button>
+                    <button class="t-btn play" id="mockPlay" aria-label="Play / pause">▶</button>
+                    <button class="t-btn" id="mockNext" aria-label="Next">⏭</button>
+                    <button class="t-btn" id="mockCrossfade" aria-label="Crossfade 12s" title="Crossfade 12s">↔</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mock-popout" id="mockPopout" aria-hidden="true">
+            <div class="pop-art" aria-hidden="true"></div>
+            <div class="pop-meta">
+              <p class="pop-title" id="popTitle">Nightingale</p>
+              <p class="pop-artist" id="popArtist">Cobalt Sky</p>
+            </div>
+            <span class="pop-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section class="section" id="features">
+        <p class="eyebrow center">Features</p>
+        <h2 class="section-title">Everything a serious player needs. Nothing it doesn't.</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Vox-like shell</h3>
+            <p>A compact, elegant window that stays out of the way. Floating window options and a
+              tray icon keep it unobtrusive while you work.</p>
+          </article>
+          <article class="card">
+            <h3>Custom-ize everything</h3>
+            <p>10 themed variants, any accent color, layouts and transparency options. Make the
+              player look the way you like — the accent you pick here previews it.</p>
+          </article>
+          <article class="card">
+            <h3>Buttery crossfade</h3>
+            <p>Up to 15 seconds of seamless crossfade between tracks, with dual-deck
+              Web Audio timing so transitions feel engineered, not abrupt.</p>
+          </article>
+          <article class="card">
+            <h3>Audio-reactive visualizer</h3>
+            <p>The analyser reads the real rendered signal — not a synthetic waveform — so the
+              bars genuinely dance to what you hear.</p>
+          </article>
+          <article class="card">
+            <h3>Pop-out now playing</h3>
+            <p>An always-on-top mini window mirrors the current track with artwork and
+              transport. Dock it anywhere; it never shows a blank frame.</p>
+          </article>
+          <article class="card">
+            <h3>Playlists in two clicks</h3>
+            <p>Add any track or SoundCloud result straight into a playlist from the row you're
+              looking at — no drag-and-drop shuffle required.</p>
+          </article>
+          <article class="card">
+            <h3>Local library</h3>
+            <p>Scan folders, play FLAC / WAV / MP3 / M4A and more, with automatic artwork
+              from embedded tags. Your library stays on your disk.</p>
+          </article>
+          <article class="card">
+            <h3>HD output pipeline</h3>
+            <p>Choose Auto, 44.1, 48, 96 or 192 kHz with a rebuilt graph — no Windows
+              resampler in the path, and a native WASAPI mode is on the roadmap.</p>
+          </article>
+          <article class="card">
+            <h3>Media keys &amp; tray</h3>
+            <p>Play/pause/next/previous keys, a tray menu, and a 10-band EQ you can dial from
+              the settings drawer while a track keeps playing.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- SOUNDCLOUD -->
+      <section class="section split" id="soundcloud">
+        <div class="split-text">
+          <p class="eyebrow">SoundCloud</p>
+          <h2 class="section-title">Stream the cloud. Take it offline.</h2>
+          <p>
+            Search SoundCloud, browse the trending chart or paste any link — tracks stream
+            straight into your library and behave exactly like local files: crossfade,
+            visualizer, playlists, queue, pop-out.
+          </p>
+          <ul class="checklist">
+            <li>Search, trending chart &amp; quick genre chips</li>
+            <li>Paste a track or set URL — it resolves instantly</li>
+            <li>One-click offline download to your chosen folder</li>
+            <li>Downloaded tracks replace their stream entry — playlists survive</li>
+          </ul>
+          <p class="fine-print">
+            Honest note: SoundCloud issues no official API keys, so Equip uses the same public
+            unauthenticated client the web app does. It's a gray area — replaceable from
+            Settings if SoundCloud rotates it. Public streams are 128 kbps MP3.
+          </p>
+        </div>
+        <div class="split-vis" aria-hidden="true">
+          <div class="wave" id="wave"></div>
+          <p class="wave-label">now streaming · soundcloud</p>
+        </div>
+      </section>
+
+      <!-- AUDIO -->
+      <section class="section split reverse" id="audio">
+        <div class="split-vis">
+          <div class="eq-bar" aria-hidden="true">
+            <span style="--h:34%"></span><span style="--h:62%"></span><span style="--h:48%"></span
+            ><span style="--h:80%"></span><span style="--h:55%"></span><span style="--h:38%"></span
+            ><span style="--h:70%"></span><span style="--h:90%"></span><span style="--h:44%"></span
+            ><span style="--h:58%"></span>
+          </div>
+        </div>
+        <div class="split-text">
+          <p class="eyebrow">Audio engine</p>
+          <h2 class="section-title">State-of-the-art output, honest sources.</h2>
+          <p>
+            Equip rebuilds its Web Audio graph whenever you change output rate — Auto, 44.1, 48,
+            96 or 192&nbsp;kHz — with a 10-band EQ and master gain applied in the same graph. The
+            visualizer reads the analyser at the very end of that chain.
+          </p>
+          <div class="rate-chips" aria-label="Supported output sample rates">
+            <span>Auto</span><span>44.1 kHz</span><span>48 kHz</span><span>96 kHz</span
+            ><span>192 kHz</span>
+          </div>
+          <p class="fine-print">
+            It can't add bits the source never had: SoundCloud's public tier is 128 kbps MP3, and
+            downloads match that quality. Local files play at whatever quality they are.
+          </p>
+        </div>
+      </section>
+
+      <!-- DOWNLOAD -->
+      <section class="section download" id="download">
+        <p class="eyebrow center">Download</p>
+        <h2 class="section-title">Get Equip for Windows</h2>
+        <p class="download-sub">
+          One installer, no sign-up. Your library and SoundCloud tracks live entirely on your
+          machine.
+        </p>
+        <div class="cta-row center">
+          <a class="btn primary big" href="https://github.com/UrkelTech-Incorp/equip/releases/latest" target="_blank" rel="noopener">
+            ⬇ Download Equip 0.1.0
+          </a>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <span class="step-num">1</span>
+            <p><strong>Run the installer</strong> — a per-user setup, no admin rights needed.</p>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <p><strong>Add a music folder</strong> — your files scan in with artwork and tags.</p>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <p><strong>Stream or download from SoundCloud</strong> — or just press play.</p>
+          </div>
+        </div>
+        <p class="fine-print center">
+          Open source under the Equip repo →
+          <a href="https://github.com/UrkelTech-Incorp/equip" target="_blank" rel="noopener"
+            >github.com/UrkelTech-Incorp/equip</a
+          >
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 BGS Studios · Equip</p>
+      <p>
+        Built with Electron &amp; React ·
+        <a href="https://github.com/UrkelTech-Incorp/equip" target="_blank" rel="noopener">Source on GitHub</a>
+      </p>
+      <p class="fine-print">SoundCloud streaming in Equip is an unofficial integration.</p>
+    </footer>
+
+    <script src="js/site.js"></script>
+  </body>
+</html>

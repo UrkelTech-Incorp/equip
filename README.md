@@ -1,5 +1,7 @@
 # Equip
 
+> 🌐 **Website:** <https://UrkelTech-Incorp.github.io/equip/>
+
 A customizable, high-fidelity music player for Windows with a Vox-like look, real
 local playback, a 15-second crossfade engine, an audio-reactive visualizer, a
 pop-out now-playing window, a local "Discover" shelf built from your own
