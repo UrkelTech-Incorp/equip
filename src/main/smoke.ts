@@ -91,8 +91,8 @@ function buildToneWav(seconds: number, sampleRate: number): Buffer {
 
 /**
  * Networked SoundCloud verification, enabled with `npm run smoke:live`.
- * Searches the real API, streams the first result through the equip-sc://
- * protocol and the real renderer, and writes an offline download into the
+ * Searches the real API, streams the first result through the loopback media
+ * server and the real renderer, and writes an offline download into the
  * scratch dir. Skipped by the default smoke so CI stays offline-deterministic.
  */
 async function runLiveSoundCloudChecks(window: BrowserWindow, scratch: string): Promise<void> {
@@ -130,23 +130,25 @@ async function runLiveSoundCloudChecks(window: BrowserWindow, scratch: string): 
 
   const streamed = await probe<{ ok: boolean; bytes: number; type: string }>(
     window,
-    `fetch('equip-sc://stream/' + ${id}).then((r) =>
-      r.arrayBuffer().then((buf) => ({ ok: r.ok, bytes: buf.byteLength, type: r.headers.get('content-type') ?? '' }))
-    ).catch((e) => ({ ok: false, bytes: 0, type: String(e) }))`
+    `window.equip.media.httpUrl('equip-sc://stream/' + ${id})
+      .then((u) => fetch(u))
+      .then((r) => r.arrayBuffer().then((buf) => ({ ok: r.ok, bytes: buf.byteLength, type: r.headers.get('content-type') ?? '' })))
+      .catch((e) => ({ ok: false, bytes: 0, type: String(e) }))`
   )
   record(
-    'stream serves audio over equip-sc://',
+    'stream serves audio over the media server',
     streamed.ok && streamed.bytes > 4096,
     `${streamed.bytes} bytes, ${streamed.type}`
   )
 
   const art = await probe<{ ok: boolean; type: string; bytes: number }>(
     window,
-    `fetch('equip-sc://artwork/' + ${id}).then((r) =>
-      r.arrayBuffer().then((buf) => ({ ok: r.ok, type: r.headers.get('content-type') ?? '', bytes: buf.byteLength }))
-    ).catch((e) => ({ ok: false, type: String(e), bytes: 0 }))`
+    `window.equip.media.httpUrl('equip-sc://artwork/' + ${id})
+      .then((u) => fetch(u))
+      .then((r) => r.arrayBuffer().then((buf) => ({ ok: r.ok, type: r.headers.get('content-type') ?? '', bytes: buf.byteLength })))
+      .catch((e) => ({ ok: false, type: String(e), bytes: 0 }))`
   )
-  record('artwork serves through equip-sc://', art.ok && art.type.startsWith('image/'), `${art.bytes} bytes, ${art.type}`)
+  record('artwork serves through the media server', art.ok && art.type.startsWith('image/'), `${art.bytes} bytes, ${art.type}`)
 
   const played = await probe<{ state: string; position: number }>(
     window,
@@ -256,7 +258,7 @@ export function runSmokeTest(
         })()`
       )
       record('library scan finds the file', scan.count >= 1, `${scan.count} track(s), title="${scan.title}"`)
-      record('track is served over equip-media://', scan.url.startsWith('equip-media://'), scan.url.slice(0, 30))
+      record('track is served over the loopback media server', scan.url.startsWith('http://127.0.0.1'), scan.url.slice(0, 34))
       record('track list renders the track', scan.rows >= 1, `${scan.rows} row(s)`)
 
       const playback = await probe<{
@@ -265,6 +267,9 @@ export function runSmokeTest(
         second: number
         sampleRate: number
         contextState: string
+        media: { ok: boolean; status: number; acao: string | null; type: string; bytes: number; error?: string }
+        sc: { ok: boolean; status: number; acao: string | null; type: string; bytes: number; error?: string }
+        element: { ok: boolean; err: string }
       }>(
         window,
         `(async () => {
@@ -275,16 +280,49 @@ export function runSmokeTest(
           const first = store.getState().snapshot.position
           await new Promise((r) => setTimeout(r, 800))
           const snapshot = store.getState().snapshot
+          const media = await (async () => {
+            const tryFetch = async (url) => {
+              try {
+                const res = await fetch(url, { mode: 'cors' })
+                const buf = await res.arrayBuffer()
+                return { url: url.slice(0, 40), ok: res.ok, status: res.status, acao: res.headers.get('access-control-allow-origin'), type: res.headers.get('content-type') ?? '', bytes: buf.byteLength }
+              } catch (e) {
+                return { url: url.slice(0, 40), ok: false, status: 0, acao: null, type: '', bytes: 0, error: String(e) }
+              }
+            }
+            return { media: await tryFetch(track.url), sc: await window.equip.media.httpUrl('equip-sc://stream/0').then((u) => tryFetch(u)) }
+          })()
+          const mediaResult = media.media
+          const scResult = media.sc
+          const element = await new Promise((resolve) => {
+            const el = new Audio()
+            el.crossOrigin = 'anonymous'
+            el.preload = 'auto'
+            let done = false
+            const finish = (v) => {
+              if (!done) { done = true; resolve(v) }
+            }
+            el.addEventListener('canplaythrough', () => finish({ ok: true, err: '' }), { once: true })
+            el.addEventListener('error', () => finish({ ok: false, err: el.error ? el.error.code + ':' + (el.error.message || '') : 'error-event' }), { once: true })
+            el.src = track.url
+            setTimeout(() => finish({ ok: false, err: 'timeout' }), 5000)
+          })
           return {
             state: snapshot.state,
             first,
             second: snapshot.position,
             sampleRate: store.getState().backend.sampleRate,
-            contextState: store.getState().backend.contextState
+            contextState: store.getState().backend.contextState,
+            media: mediaResult,
+            sc: scResult,
+            element
           }
         })()`
       )
       record('audio context is running', playback.contextState === 'running', `${playback.contextState} @ ${playback.sampleRate} Hz`)
+      record('local file serves over the media server (CORS)', playback.media.ok && playback.media.bytes > 100, `status=${playback.media.status} acao=${playback.media.acao} bytes=${playback.media.bytes} ${playback.media.error ?? ''}`)
+      record('media server rejects unknown stream (non-2xx expected)', playback.sc.status >= 400, `status=${playback.sc.status} ${playback.sc.error ?? ''}`)
+      record('bare audio element loads track', playback.element.ok, `err=${playback.element.err}`)
       record('playback reaches the playing state', playback.state === 'playing', `state=${playback.state}`)
       record(
         'playback position advances',

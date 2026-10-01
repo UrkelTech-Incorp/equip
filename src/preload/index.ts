@@ -91,6 +91,12 @@ const equip = {
     get: (): Promise<Playlist[]> => ipcRenderer.invoke('playlists:get'),
     save: (playlists: Playlist[]): Promise<Playlist[]> => ipcRenderer.invoke('playlists:save', playlists)
   },
+  media: {
+    /** Base URL of the loopback media server, e.g. http://127.0.0.1:52903. */
+    base: (): Promise<string> => ipcRenderer.invoke('media:base'),
+    /** Maps a logical equip-media:/equip-sc: URL to the loopback HTTP URL. */
+    httpUrl: (url: string): Promise<string> => ipcRenderer.invoke('media:httpUrl', url)
+  },
   mini: {
     open: (): void => ipcRenderer.send('mini:open'),
     close: (): void => ipcRenderer.send('mini:close'),

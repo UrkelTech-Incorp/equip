@@ -34,8 +34,9 @@ npm run preview
 ## Verify (end-to-end smoke test)
 
 `npm run smoke` builds the app, launches the **real** renderer, generates a tone
-WAV, scans it into the library, plays it over the custom `equip-media://`
-protocol and Web Audio, and then:
+WAV, scans it into the library, plays it over the loopback media server
+(`http://127.0.0.1:<port>` serving local files and SoundCloud streams with
+Range/206 and CORS support) and Web Audio, and then:
 
 - checks that the UI shell, preload bridge, theme and CSP are live,
 - exercises the 10-band EQ, the 15 s crossfade setting, and output sample-rate
@@ -46,23 +47,23 @@ protocol and Web Audio, and then:
   round-trip) without touching the network.
 
 ```
-smoke: 20/20 checks passed
+smoke: 23/23 checks passed
 ```
 
 With a network connection, `npm run smoke:live` additionally streams and
-downloads a **real** SoundCloud track — search, library insert, the
-`equip-sc://` stream proxy, artwork proxy, in-player playback, offline download,
+downloads a **real** SoundCloud track — search, library insert, the SoundCloud
+stream proxy, artwork proxy, in-player playback, offline download,
 and pasted-link resolution:
 
 ```
 PASS  soundcloud search returns tracks            [8 result(s)]
 PASS  soundcloud track enters the library         [id=sc2324995076]
-PASS  stream serves audio over equip-sc://        [2396247 bytes, audio/mpeg]
-PASS  artwork serves through equip-sc://          [6577 bytes, image/jpeg]
+PASS  stream serves audio over the media server   [2396247 bytes, audio/mpeg]
+PASS  artwork serves through the media server     [6577 bytes, image/jpeg]
 PASS  soundcloud track streams in the player      [state=playing pos=2.5s]
 PASS  soundcloud download saves an offline file   [...mp3]
 PASS  a pasted soundcloud.com link resolves       [kind=track id=2324995076]
-smoke: 27/27 checks passed
+smoke: 30/30 checks passed
 ```
 
 Both runs use a throwaway Chromium profile, so they can never touch your real
@@ -96,7 +97,7 @@ Verified by the smoke test above unless noted:
 | Playlists | Create/rename/delete, add-to-playlist from any row, persisted to disk. |
 | UI options | 6 accent colors + custom picker, window transparency, background blur, layout density, visualizer mode. |
 | Keyboard | Space/K play, ←/→ seek (±5 s, +Shift = 30 s), ↑/↓ volume, N/P next/prev, M mute, S shuffle, R repeat, Q queue, Esc close panels. |
-| SoundCloud streaming | Search, "trending" chart, quick genre chips, paste-a-link (track or set), streamed playback over the `equip-sc://` proxy — seeks, crossfades, and feeds the visualizer like any local file. Stream-only tracks live in the library and work with playlists, the queue and the pop-out. |
+| SoundCloud streaming | Search, "trending" chart, quick genre chips, paste-a-link (track or set), streamed playback over the local media server — seeks, crossfades, and feeds the visualizer like any local file. Stream-only tracks live in the library and work with playlists, the queue and the pop-out. |
 | Offline downloads | Per-track download to a folder you choose (default `Music\Equip Downloads`) as 128 kbps MP3; downloaded tracks become normal local library tracks. Live download progress, per-track "saved offline" state. |
 | System | Frameless transparent window, tray icon with play control, media keys, crash diagnostics. |
 
@@ -115,8 +116,9 @@ app bakes into its front-end bundles. That key is:
   SoundCloud serves unauthenticated.
 
 All API calls, stream proxying and artwork proxying happen in the Electron main
-process (renderer never sees the key) over the `equip-sc://` protocol with the
-same CORS/range behavior as local files.
+process (renderer never sees the key) and are served to the renderer by a
+loopback HTTP server on `http://127.0.0.1:<port>` with the same CORS/range
+behavior for local files.
 
 ## Honest limitations
 
@@ -140,9 +142,11 @@ the project does not have:
 
 ```
 src/main           Electron main: window lifecycle, IPC, tray, media keys,
-                   equip-media:// + equip-sc:// protocols, library v2 JSON
-                   persistence, SoundCloud client (search/charts/resolve/stream/
-                   download), smoke runner
+                   loopback media server (http://127.0.0.1) serving local files
+                   + proxying SoundCloud streams/artwork with Range + CORS,
+                   legacy equip-media:// + equip-sc:// protocol fallbacks,
+                   library v2 JSON persistence, SoundCloud client
+                   (search/charts/resolve/stream/download), smoke runner
 src/preload        sandboxed contextBridge surface (window.equip)
 src/renderer/src
   audio/           AudioBackend interface + WebAudioBackend (decks, crossfade,
@@ -159,17 +163,24 @@ The main/pop-out windows exchange playback state over `playback:update` /
 `playback:state`, with a `playback:getState` invocation so a freshly opened
 mini-window always pulls the latest now-playing state on mount.
 
-Custom protocols, both registered as standard, secure, streamable schemes that
-the main process resolves through `net.fetch` — audio never hits a web page:
+All audio and artwork reach the renderer through a loopback HTTP server
+(main process, ephemeral port, `Access-Control-Allow-Origin: *`), so the Web
+Audio analyser (visualizer/EQ) sees the real signal for remote and local
+playback alike:
 
-- `equip-media://local/<url-encoded absolute path>` serves local files.
-- `equip-sc://stream/<scId>` and `equip-sc://artwork/<scId>` proxy SoundCloud
-  streams (following the signed CDN redirect, preserving Range/206 seeks) and
-  artwork through a 20-minute signed-URL cache.
+- `http://127.0.0.1:<port>/local/<url-encoded absolute path>` serves local
+  files with Range/206 seeking.
+- `http://127.0.0.1:<port>/sc/stream/<scId>` and
+  `http://127.0.0.1:<port>/sc/artwork/<scId>` proxy SoundCloud streams
+  (following the signed CDN redirect, preserving Range/206 seeks) and artwork
+  through a 20-minute signed-URL cache.
 
-Both add `Access-Control-Allow-Origin: *` and the audio decks run with
-`crossOrigin='anonymous'`, so the Web Audio analyser (visualizer/EQ) sees the
-real signal for remote and local playback alike.
+Tracks are stored with logical URLs (`equip-media://local/...`,
+`equip-sc://stream|artwork/<scId>`) in the library JSON; the main process maps
+them to live loopback URLs at every IPC boundary. The custom protocols remain
+registered as a fallback for direct navigation, but the renderer loads media
+exclusively over loopback HTTP — plain loopback HTTP is immune to the
+custom-scheme CORS load failures some OS/Chromium combinations produce.
 
 ## License
 

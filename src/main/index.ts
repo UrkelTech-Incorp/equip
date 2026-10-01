@@ -32,6 +32,7 @@ import {
   type RemoteTrack
 } from './soundcloud'
 import { upsertTracks } from './library'
+import { mediaBase, startMediaServer, wireLibrary, wireUrl } from './mediaServer'
 
 // Must run before any code resolves `userData`, so a verification pass can
 // never read or overwrite the real library.
@@ -263,7 +264,11 @@ function registerMediaProtocol(): void {
 }
 
 /**
- * The streaming/artwork side of SoundCloud. Handles
+ * Legacy streaming/artwork protocol for SoundCloud. The renderer media now
+ * goes through the loopback HTTP server (mediaServer.ts) because some
+ * OS/Chromium combinations break CORS-mode subresource loading of custom
+ * schemes; these handlers are kept for direct navigation and as a fallback
+ * for any surface that still holds a logical equip-sc: URL.
  *   equip-sc://stream/<scId>    → signed MP3 stream (proxied, ranges passed through)
  *   equip-sc://artwork/<scId>   → artwork image (SoundCloud is not allowed by CSP)
  */
@@ -300,15 +305,18 @@ function registerIpc(): void {
   })
   ipcMain.on('window:close', () => app.quit())
 
-  ipcMain.handle('library:get', () => loadLibrary())
+  ipcMain.handle('library:get', async () => wireLibrary(await loadLibrary()))
   ipcMain.handle('library:addFolder', async (): Promise<LibraryTrack[] | null> => {
     const picked = await pickFolders()
     if (picked.length === 0) return null
-    return addPaths(picked)
+    return wireLibrary(await addPaths(picked))
   })
-  ipcMain.handle('library:addPaths', (_event, paths: string[]) => addPaths(paths))
-  ipcMain.handle('library:rescan', () => rescanLibrary())
-  ipcMain.handle('library:clear', () => clearLibrary())
+  ipcMain.handle('library:addPaths', async (_event, paths: string[]) => wireLibrary(await addPaths(paths)))
+  ipcMain.handle('library:rescan', async () => wireLibrary(await rescanLibrary()))
+  ipcMain.handle('library:clear', async () => wireLibrary(await clearLibrary()))
+
+  ipcMain.handle('media:base', () => mediaBase())
+  ipcMain.handle('media:httpUrl', (_event, url: string) => wireUrl(String(url)) ?? '')
 
   ipcMain.handle('playlists:get', () => loadPlaylists())
   ipcMain.handle('playlists:save', async (_event, playlists: Playlist[]) => {
@@ -339,10 +347,13 @@ function registerIpc(): void {
   ipcMain.handle('sc:resolve', (_event, url: string) => resolveUrl(url))
   // Persists stream-only SoundCloud tracks into the library so play, queue and
   // playlists can resolve them like any other track.
-  ipcMain.handle('sc:add', async (_event, tracks: RemoteTrack[]) => upsertTracks(tracks.map(remoteToLibraryTrack)))
+  ipcMain.handle('sc:add', async (_event, tracks: RemoteTrack[]) =>
+    wireLibrary(await upsertTracks(tracks.map(remoteToLibraryTrack)))
+  )
   ipcMain.handle('sc:download', async (event, scId: number) => {
     const onProgress = (progress: DownloadProgress): void => event.sender.send('sc:progress', progress)
-    return downloadTrack(scId, onProgress)
+    const result = await downloadTrack(scId, onProgress)
+    return { ...result, library: wireLibrary(result.library) }
   })
   ipcMain.handle('sc:settings/get', () => getSettings())
   ipcMain.handle('sc:settings/set', (_event, patch: Record<string, string>) => setSettings(patch))
@@ -354,8 +365,11 @@ function registerIpc(): void {
   })
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.bgsstudios.equip')
+  // The loopback media server must be listening before any renderer requests a
+  // track or artwork URL.
+  await startMediaServer()
   registerMediaProtocol()
   registerSoundCloudProtocol()
   registerIpc()

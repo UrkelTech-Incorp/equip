@@ -11,6 +11,21 @@ const QUICK_SEARCHES = ['lofi', 'synthwave', 'downtempo', 'house', 'jazz', 'ambi
 
 const scIdOf = (track: RemoteTrack): string => `sc${track.scId}`
 
+/** Renders SoundCloud artwork through the loopback media server. */
+function ScThumb({ scId }: { scId: number }): React.JSX.Element {
+  const [src, setSrc] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    void window.equip.media.httpUrl(`equip-sc://artwork/${scId}`).then((url) => {
+      if (alive) setSrc(url)
+    })
+    return () => {
+      alive = false
+    }
+  }, [scId])
+  return src ? <img src={src} alt="" /> : <span className="mini-art" />
+}
+
 export function SoundCloudView(): React.JSX.Element {
   const section = useSoundCloudStore((state) => state.section)
   const headline = useSoundCloudStore((state) => state.headline)
@@ -179,11 +194,7 @@ export function SoundCloudView(): React.JSX.Element {
                   <em>{index + 1}</em>
                 </span>
                 <div className="title-cell">
-                  {track.artworkUrl ? (
-                    <img src={`equip-sc://artwork/${track.scId}`} alt="" />
-                  ) : (
-                    <span className="mini-art" />
-                  )}
+                  {track.artworkUrl ? <ScThumb scId={track.scId} /> : <span className="mini-art" />}
                   <span className="title-text">
                     <strong>{track.title}</strong>
                     <em>{track.artist}</em>
